@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import '../models/user.model.dart';
 import '../screens/login.dart';
 import '../services/face.service.dart';
 import '../services/users.service.dart';
@@ -18,6 +19,10 @@ import '../utils/check_new_version.dart';
 class HomeController extends GetxController {
   var user = AppUtils.getUser().obs;
   var loading = false.obs;
+  var profile = <String, dynamic>{}.obs;
+  final nextStatusAttendace = ''.obs;
+  final lastWaktuCheckin = ''.obs;
+  final lastWaktuCheckout = ''.obs;
 
   @override
   void onInit() {
@@ -32,24 +37,28 @@ class HomeController extends GetxController {
   Future<void> init() async {
     await getCurrentUser();
     await checkNewVersion();
+    getSessionAttendace();
   }
 
   Future<void> handleLogout() async {
     final box = GetStorage();
     await box.erase();
-    Get.deleteAll();
-    Get.offAll(const LoginScreen());
+    await Get.deleteAll();
+    await Get.offAll(const LoginScreen());
   }
 
   Future<void> getCurrentUser() async {
-    setLoading(true);
-    var response = await UsersService().getCurrentUser();
-    var _user = jsonEncode(response);
-    final box = GetStorage();
-    await box.write('user', _user);
-    user.value = response;
-    user.refresh();
-    setLoading(false);
+    EasyLoading.show();
+    try {
+      final request = await UsersService().getProfile();
+      if (request != null) {
+        profile.value = request;
+      }
+    } catch (e) {
+      EasyLoading.showError(e.toString());
+    }
+
+    EasyLoading.dismiss();
   }
 
   Future handleClockInCallback(XFile file) async {
@@ -142,5 +151,16 @@ class HomeController extends GetxController {
     }
 
     await Geolocator.getCurrentPosition();
+  }
+
+  Future<void> getSessionAttendace() async {
+    final box = GetStorage();
+    final loadLastCheckin = await box.read('lastWaktuCheckout');
+    final loadLastCheckout = await box.read('lastWaktuCheckin');
+    final laodNextAtt = await box.read('nextStatusAttendance');
+
+    nextStatusAttendace.value = laodNextAtt ?? '';
+    lastWaktuCheckin.value = loadLastCheckout ?? '';
+    lastWaktuCheckout.value = loadLastCheckin ?? '';
   }
 }

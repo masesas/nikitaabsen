@@ -26,7 +26,7 @@ class ActivityHistoryScreen extends StatelessWidget {
           children: [
             ActivityHistoryPagedView(),
             AbsenActivityHistory(),
-            OvertimeActivityHistory(),
+            //OvertimeActivityHistory(),
             LeaveActivityHistory(),
             SickActivityHistory(),
           ],
@@ -39,22 +39,22 @@ class ActivityHistoryScreen extends StatelessWidget {
     return [
       const Tab(
         child: Text(
-          'Semua',
-          style: TextStyle(fontFamily: 'WorkSans'),
+          'Checkin',
+          style: TextStyle(fontFamily: 'Checkin'),
         ),
       ),
       const Tab(
         child: Text(
-          'Hadir',
+          'Checkout',
           style: TextStyle(fontFamily: 'WorkSans'),
         ),
       ),
-      const Tab(
+      /* const Tab(
         child: Text(
           'Lembur',
           style: TextStyle(fontFamily: 'WorkSans'),
         ),
-      ),
+      ), */
       const Tab(
         child: Text(
           'Cuti',
@@ -63,7 +63,7 @@ class ActivityHistoryScreen extends StatelessWidget {
       ),
       const Tab(
         child: Text(
-          'Sakit',
+          'Izin',
           style: TextStyle(fontFamily: 'WorkSans'),
         ),
       ),

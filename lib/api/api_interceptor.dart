@@ -11,7 +11,7 @@ class AppInterceptors extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     var token = AppUtils.getToken();
-    options.headers = {'Authorization': token};
+    options.headers = {'Authorization': 'Bearer $token'};
     return handler.next(options);
   }
 

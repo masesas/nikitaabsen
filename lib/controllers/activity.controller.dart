@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'package:nikitaabsen/utils/status_activity.dart';
 
 import '../models/activity.model.dart';
 import '../models/response/activity_response.dart';
@@ -17,19 +18,19 @@ class ActivityController extends GetxController {
 
   static const _pageSize = 10;
 
-  final PagingController<int, Activity> pagingController =
+  final PagingController<int, Map<String, dynamic>> pagingController =
       PagingController(firstPageKey: 0);
 
-  final PagingController<int, Activity> absenPagingController =
+  final PagingController<int, Map<String, dynamic>> absenPagingController =
       PagingController(firstPageKey: 0);
 
-  final PagingController<int, Activity> overtimePagingController =
+  final PagingController<int, Map<String, dynamic>> overtimePagingController =
       PagingController(firstPageKey: 0);
 
-  final PagingController<int, Activity> leavePagingController =
+  final PagingController<int, Map<String, dynamic>> leavePagingController =
       PagingController(firstPageKey: 0);
 
-  final PagingController<int, Activity> sickPagingController =
+  final PagingController<int, Map<String, dynamic>> sickPagingController =
       PagingController(firstPageKey: 0);
 
   ActivityController(this.queryParams);
@@ -52,32 +53,50 @@ class ActivityController extends GetxController {
 
   Future<void> setActivity(int pageKey) async {
     setLoading(true);
-    queryParams.addAll({r'$limit': _pageSize, r'$skip': pageKey});
+    /* queryParams.addAll({r'$limit': _pageSize, r'$skip': pageKey});
     var response = await ActivityService().find(params: queryParams);
-    final isLastPage = response.data!.length < _pageSize;
+    final isLastPage = response.length < _pageSize;
 
     if (isLastPage) {
-      pagingController.appendLastPage(response.data!);
+      pagingController.appendLastPage(response);
     } else {
-      final nextPageKey = pageKey + response.data!.length;
-      pagingController.appendPage(response.data!, nextPageKey);
+      final nextPageKey = pageKey + response.length;
+      pagingController.appendPage(response, nextPageKey);
+    } */
+
+    setLoading(false);
+  }
+
+  Future<void> setAbsenCheckinActivity(int pageKey) async {
+    setLoading(true);
+    queryParams
+        .addAll({r'$limit': _pageSize, r'$skip': pageKey, 'status': 'IN'});
+    var response = await ActivityService().find(StatusActivity.checkin, params: queryParams);
+    final isLastPage = response.length < _pageSize;
+
+    if (isLastPage) {
+      absenPagingController.appendLastPage(response);
+    } else {
+      final nextPageKey = pageKey + response.length;
+      absenPagingController.appendPage(response, nextPageKey);
     }
 
     setLoading(false);
   }
 
-  Future<void> setAbsenActivity(int pageKey) async {
+    Future<void> setAbsenCheckoutActivity(int pageKey) async {
     setLoading(true);
     queryParams
         .addAll({r'$limit': _pageSize, r'$skip': pageKey, 'status': 'IN'});
-    var response = await ActivityService().find(params: queryParams);
-    final isLastPage = response.data!.length < _pageSize;
+    var response = await ActivityService()
+        .find(StatusActivity.checkout, params: queryParams);
+    final isLastPage = response.length < _pageSize;
 
     if (isLastPage) {
-      absenPagingController.appendLastPage(response.data!);
+      pagingController.appendLastPage(response);
     } else {
-      final nextPageKey = pageKey + response.data!.length;
-      absenPagingController.appendPage(response.data!, nextPageKey);
+      final nextPageKey = pageKey + response.length;
+      pagingController.appendPage(response, nextPageKey);
     }
 
     setLoading(false);
@@ -87,14 +106,14 @@ class ActivityController extends GetxController {
     setLoading(true);
     queryParams
         .addAll({r'$limit': _pageSize, r'$skip': pageKey, 'status': 'CUTI'});
-    var response = await ActivityService().find(params: queryParams);
-    final isLastPage = response.data!.length < _pageSize;
+    var response = await ActivityService().find(StatusActivity.cuti, params: queryParams);
+    final isLastPage = response.length < _pageSize;
 
     if (isLastPage) {
-      leavePagingController.appendLastPage(response.data!);
+      leavePagingController.appendLastPage(response);
     } else {
-      final nextPageKey = pageKey + response.data!.length;
-      leavePagingController.appendPage(response.data!, nextPageKey);
+      final nextPageKey = pageKey + response.length;
+      leavePagingController.appendPage(response, nextPageKey);
     }
 
     setLoading(false);
@@ -102,17 +121,17 @@ class ActivityController extends GetxController {
 
   Future<void> setOvertimeActivity(int pageKey) async {
     setLoading(true);
-    queryParams.addAll(
+    /* queryParams.addAll(
         {r'$limit': _pageSize, r'$skip': pageKey, 'status': 'OVERTIME'});
     var response = await ActivityService().find(params: queryParams);
-    final isLastPage = response.data!.length < _pageSize;
+    final isLastPage = response.length < _pageSize;
 
     if (isLastPage) {
-      overtimePagingController.appendLastPage(response.data!);
+      overtimePagingController.appendLastPage(response);
     } else {
-      final nextPageKey = pageKey + response.data!.length;
-      overtimePagingController.appendPage(response.data!, nextPageKey);
-    }
+      final nextPageKey = pageKey + response.length;
+      overtimePagingController.appendPage(response, nextPageKey);
+    } */
 
     setLoading(false);
   }
@@ -121,14 +140,14 @@ class ActivityController extends GetxController {
     setLoading(true);
     queryParams
         .addAll({r'$limit': _pageSize, r'$skip': pageKey, 'status': 'SAKIT'});
-    var response = await ActivityService().find(params: queryParams);
-    final isLastPage = response.data!.length < _pageSize;
+    var response = await ActivityService().find(StatusActivity.izin, params: queryParams);
+    final isLastPage = response.length < _pageSize;
 
     if (isLastPage) {
-      sickPagingController.appendLastPage(response.data!);
+      sickPagingController.appendLastPage(response);
     } else {
-      final nextPageKey = pageKey + response.data!.length;
-      sickPagingController.appendPage(response.data!, nextPageKey);
+      final nextPageKey = pageKey + response.length;
+      sickPagingController.appendPage(response, nextPageKey);
     }
 
     setLoading(false);

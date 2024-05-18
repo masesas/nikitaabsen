@@ -76,10 +76,65 @@ class AuthController extends GetxController {
     setLoading(true);
     try {
       var response = await AuthService().login(loginRequest);
-      var user = jsonEncode(response.user);
-      var accessToken = response.accessToken;
+      if (response != null) {
+        var user = jsonEncode(response.user);
+        var accessToken = response.accessToken;
 
-     /*  final accessToken = AppUtils.generateRandomString();
+        final box = GetStorage();
+        await box.write('user', user);
+        await box.write('token', accessToken);
+
+        Get.off(const HomeScreen());
+
+        setLoading(false);
+      }
+    } catch (e) {
+      catchError(e);
+    }
+  }
+
+  Future<void> register(String fullname, String email, String password,
+      String company_code, XFile file) async {
+    setLoading(true);
+    try {
+      final uploadFormData = dio.FormData.fromMap({
+        'image': await AppUtils.createMultipart(file.path),
+      });
+
+      final uploadId = await UploadService().create(uploadFormData);
+
+      final dataRegis = DataRegister(
+        fullname: fullname,
+        email: email,
+        password: password,
+        companyCode: company_code,
+        isMobile: true,
+        photo: uploadId,
+      );
+
+      await AuthService().registerMobile(dataRegis);
+      EasyLoading.showSuccess('Pendaftaran berhasil dikirim!');
+      setLoading(false);
+      Get.back();
+      return;
+    } catch (e) {
+      setLoading(false);
+      if (e is dio.DioError) {
+        var message =
+            e.response?.data?['message'] ?? 'Terjadi kesalahan pada server';
+
+        EasyLoading.showError(message);
+
+        return;
+      }
+      EasyLoading.showError('Terjadi kesalahan pada server');
+      return;
+    }
+  }
+
+  // ignore: unused_element
+  void _backupDummy() {
+    /*  final accessToken = AppUtils.generateRandomString();
       final companyId = AppUtils.generateRandomString(10);
       final jobDepartementId = AppUtils.generateRandomString(10);
       final jobLevelId = AppUtils.generateRandomString(10);
@@ -157,57 +212,5 @@ class AuthController extends GetxController {
 
       final user = jsonEncode(userObj.toJson());
  */
-      final box = GetStorage();
-      await box.write('user', user);
-      await box.write('token', accessToken);
-
-      Get.off(const HomeScreen());
-
-      setLoading(false);
-    } catch (e) {
-      catchError(e);
-    }
-  }
-
-  Future<void> register(String fullname, String email, String password,
-      String company_code, XFile file) async {
-    setLoading(true);
-
-    String filename = file.path.split('/').last;
-
-    final uploadFormData = dio.FormData.fromMap({
-      'uri': await AppUtils.createMultipart(file.path),
-    });
-    final upload = await UploadService().create(uploadFormData);
-
-    final dataRegis = DataRegister(
-        fullname: fullname,
-        email: email,
-        password: password,
-        companyCode: company_code,
-        isMobile: true,
-        photo: upload.id);
-
-    try {
-      await AuthService().registerMobile(dataRegis);
-      EasyLoading.showSuccess('Pendaftaran berhasil dikirim!');
-      setLoading(false);
-      Get.back();
-      return;
-    } catch (e) {
-      setLoading(false);
-      if (e is dio.DioError) {
-        var codeResponse = jsonEncode(e.response?.data?['code']);
-
-        var message =
-            e.response?.data?['message'] ?? 'Terjadi kesalahan pada server';
-
-        EasyLoading.showError(message);
-
-        return;
-      }
-      EasyLoading.showError('Terjadi kesalahan pada server');
-      return;
-    }
   }
 }

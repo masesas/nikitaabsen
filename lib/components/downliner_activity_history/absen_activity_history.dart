@@ -51,7 +51,7 @@ class _MonitorAbsenHistoryState extends State<MonitorAbsenHistory> {
 
     final _activity = Get.put(ActivityController({'upliner_id': user.id}));
     _activity.absenPagingController.addPageRequestListener((pageKey) {
-      _activity.setAbsenActivity(pageKey);
+      //_activity.setAbsenActivity(pageKey);
     });
 
     Future openDialog(String type, String id) => showDialog(
@@ -89,15 +89,15 @@ class _MonitorAbsenHistoryState extends State<MonitorAbsenHistory> {
           ),
         );
 
-    return PagedListView<int, Activity>.separated(
+    return PagedListView<int, Map<String,dynamic>>.separated(
       separatorBuilder: (context, index) => const Divider(),
       pagingController: _activity.absenPagingController,
       padding: const EdgeInsets.only(top: 8, bottom: 8),
-      builderDelegate: PagedChildBuilderDelegate<Activity>(
+      builderDelegate: PagedChildBuilderDelegate<Map<String, dynamic>>(
         itemBuilder: (context, item, index) {
           return BasicListTile(
             activity: item,
-            onTap: () => item.isApproved == null
+            onTap: () => item['isApproved'] == null
                 ? showModalBottomSheet(
                     isScrollControlled: true,
                     context: context,
@@ -123,8 +123,8 @@ class _MonitorAbsenHistoryState extends State<MonitorAbsenHistory> {
                             child: SizedBox(
                               height: 200,
                               child: MapScreen(
-                                lat: double.parse(item.latitude!),
-                                lng: double.parse(item.longitude!),
+                                lat: double.parse(item['latitude']),
+                                lng: double.parse(item['longitude']),
                               ),
                             ),
                           ),
@@ -153,7 +153,7 @@ class _MonitorAbsenHistoryState extends State<MonitorAbsenHistory> {
                                 Expanded(
                                   child: BasicButton(
                                     onPressed: () async {
-                                      openDialog('IN', item.id!.toString());
+                                      openDialog('IN', item['id']);
 
                                       debugPrint(jsonEncode(item));
                                     },
@@ -170,7 +170,7 @@ class _MonitorAbsenHistoryState extends State<MonitorAbsenHistory> {
                                     onPressed: () async {
                                       var datass = await _approveController
                                           .approvalAbsens(
-                                              'IN', item.id!.toString());
+                                              'IN', item['id']);
                                     },
                                     color: mainColor,
                                     basicText: 'Setujui',

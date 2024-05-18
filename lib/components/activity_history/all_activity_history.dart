@@ -16,15 +16,15 @@ class ActivityHistoryPagedView extends StatelessWidget {
   Widget build(BuildContext context) {
     var user = AppUtils.getUser();
     final _activity = Get.put(ActivityController({'user_id': user.id}));
-    _activity.pagingController.addPageRequestListener((pageKey) {
-      _activity.setActivity(pageKey);
+    _activity.absenPagingController.addPageRequestListener((pageKey) {
+      _activity.setAbsenCheckinActivity(pageKey);
     });
 
-    return PagedListView<int, Activity>.separated(
+    return PagedListView<int, Map<String, dynamic>>.separated(
       separatorBuilder: (context, index) => const Divider(),
-      pagingController: _activity.pagingController,
+      pagingController: _activity.absenPagingController,
       padding: const EdgeInsets.only(top: 8, bottom: 8),
-      builderDelegate: PagedChildBuilderDelegate<Activity>(
+      builderDelegate: PagedChildBuilderDelegate<Map<String, dynamic>>(
         itemBuilder: (context, item, index) {
           return BasicListTile(activity: item);
         },

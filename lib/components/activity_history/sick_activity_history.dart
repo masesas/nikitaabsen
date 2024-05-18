@@ -20,11 +20,11 @@ class SickActivityHistory extends StatelessWidget {
       _activity.setSickActivity(pageKey);
     });
 
-    return PagedListView<int, Activity>.separated(
+    return PagedListView<int, Map<String,dynamic>>.separated(
       separatorBuilder: (context, index) => const Divider(),
       pagingController: _activity.sickPagingController,
       padding: const EdgeInsets.only(top: 8, bottom: 8),
-      builderDelegate: PagedChildBuilderDelegate<Activity>(
+      builderDelegate: PagedChildBuilderDelegate<Map<String, dynamic>>(
         itemBuilder: (context, item, index) {
           return BasicListTile(activity: item);
         },

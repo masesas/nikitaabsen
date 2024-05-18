@@ -5,6 +5,8 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:nikitaabsen/controllers/request_activity.controller.dart';
+import 'package:nikitaabsen/utils/status_activity.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import '../components/button/basic_button.dart';
@@ -37,6 +39,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final controller = Get.put(HomeController());
+  final requestActivityController = Get.put(RequestActivityController());
+
   var locpointss = AppUtils.getLocPoint();
   var radius = AppUtils.getRadius();
 
@@ -73,8 +78,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(HomeController());
-
     final menu = [
       {
         'is_leader': false,
@@ -88,24 +91,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       },
       {
-        'is_leader': true,
+        'is_leader': false,
         'component': MenuCard(
           imagePath: 'assets/images/listpict.png',
-          title: 'Monitor',
-          subTitle: 'Monitor aktivitas tim kamu.',
-          onTap: () {
-            Get.to(const DownlinerActivityHistory());
+          title: 'Checkin',
+          subTitle: 'Absen masuk harian kamu.',
+          onTap: () async {
+            await _absen(activity: StatusActivity.checkin);
+            //EasyLoading.showInfo("Fitur ini segera hadir");
+            //Get.to(const DownlinerActivityHistory());
           },
         )
       },
       {
-        'is_leader': true,
+        'is_leader': false,
         'component': MenuCard(
           imagePath: 'assets/images/calendar.png',
-          title: 'Atur Jadwal',
-          subTitle: 'Monitor aktivitas tim kamu.',
-          onTap: () {
-            Get.to(const ScheduleSettingPage());
+          title: 'Checkout',
+          subTitle: 'Absen keluar harian kamu',
+          onTap: () async {
+            await _absen(activity: StatusActivity.checkout);
+            //Get.to(const ScheduleSettingPage());
+            //EasyLoading.showInfo("Fitur ini segera hadir");
           },
         ),
       },
@@ -141,7 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Lembur',
           subTitle: 'Ajukan permintaan lembur kamu disini.',
           onTap: () {
-            showModalBottomSheet(
+            EasyLoading.showInfo("Fitur ini segera hadir");
+            /*  showModalBottomSheet(
                 isScrollControlled: true,
                 context: context,
                 shape: const RoundedRectangleBorder(
@@ -154,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: EdgeInsets.only(
                           bottom: MediaQuery.of(context).viewInsets.bottom),
                       child: OvertimeScreen(),
-                    )));
+                    ))); */
           },
         ),
       },
@@ -165,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Sakit',
           subTitle: 'Beri tahu atasanmu jika kamu sedang sakit.',
           onTap: () {
-            Get.to(SickScreen());
+            Get.to(() => const SickScreen());
           },
         ),
       }
@@ -214,8 +222,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.only(left: 15, top: 20),
                           child: _buildHeader(
-                            companyName: controller.user.value.company?.name,
-                            userName: controller.user.value.fullname!,
+                            companyName: null,
+                            userName: controller.profile['name'] ?? 'Akun Demo',
                             jobLevel: controller.user.value.jobLevel?.name,
                             jobDepartment:
                                 controller.user.value.jobDepartement?.name,
@@ -223,42 +231,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         ClockCard(
                           user: controller.user.value,
-                          onPressedClockIn: () async {
-                            await controller.determinePosition();
-                            XFile? file = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CustomCamera(
-                                  file: (_file) async =>
-                                      await handleClockInCallback(
-                                          _file, controller.user.value),
-                                ),
-                              ),
-                            );
-
-                            if (file != null) {
-                              showModalBottomSheet(
-                                isScrollControlled: true,
-                                context: context,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(20),
-                                  ),
-                                ),
-                                builder: (context) => Padding(
-                                  padding: EdgeInsets.only(
-                                      bottom: MediaQuery.of(context)
-                                          .viewInsets
-                                          .bottom),
-                                  child: ClockInForm(
-                                    filePath: file.path,
-                                    userId: controller.user.value.id!,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
+                          profile: controller.profile,
+                          onPressedClockIn: () async => await _absen(),
                           onPressedClockOut: () {
                             showModalBottomSheet(
                               context: context,
@@ -435,13 +409,12 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            companyName != null
-                ? Text(companyName, style: const TextStyle(color: Colors.white))
-                : const Text('Akun Demo',
-                    style: TextStyle(color: Colors.white)),
-            const SizedBox(
-              height: 10,
-            ),
+            if (companyName != null)
+              Text(companyName, style: const TextStyle(color: Colors.white)),
+            if (companyName != null)
+              const SizedBox(
+                height: 10,
+              ),
             Text(
               userName,
               style: const TextStyle(
@@ -482,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'ref_photo': "${AppConfig.baseUrl}/uploads/${user.photo}"
     });
 
-    try {
+    /* try {
       final _response = await FaceService().recognize(formdata);
       if (_response.data!['_label'] == 'unknown') {
         EasyLoading.showError('Wajah tidak dikenali');
@@ -495,7 +468,7 @@ class _HomeScreenState extends State<HomeScreen> {
       catchRecognitionError(e);
       Navigator.pop(context);
       return;
-    }
+    } */
   }
 
   void catchRecognitionError(e) {
@@ -516,6 +489,54 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     EasyLoading.showError('Maaf terjadi kesalahan pada server');
     return;
+  }
+
+  Future<void> _absen({
+    StatusActivity? activity,
+  }) async {
+    await controller.determinePosition();
+    if (mounted) {
+      XFile? file = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CustomCamera(
+            file: (file) async =>
+                await handleClockInCallback(file, controller.user.value),
+          ),
+        ),
+      );
+
+      if (file != null) {
+        requestActivityController.saveActivity(
+          activity ??
+              (controller.nextStatusAttendace.value == 'CHECKOUT'
+                  ? StatusActivity.checkout
+                  : StatusActivity.checkin),
+          {},
+        );
+        /* showModalBottomSheet(
+                                isScrollControlled: true,
+                                context: context,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(20),
+                                    topRight: Radius.circular(20),
+                                  ),
+                                ),
+                                builder: (context) => Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: MediaQuery.of(context)
+                                        .viewInsets
+                                        .bottom,
+                                  ),
+                                  child: ClockInForm(
+                                    filePath: file.path,
+                                    userId: controller.user.value.id!,
+                                  ),
+                                ),
+                              ); */
+      }
+    }
   }
 
   // Future<bool> _getDistance() async {

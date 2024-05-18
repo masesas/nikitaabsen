@@ -30,12 +30,16 @@ class _SickScreenState extends State<SickScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(
-      title: const Text('Form Izin Sakit'),
-    ),
-        body: NikitaFace());
+    return _build(context);
+    /* return Scaffold(
+      appBar: AppBar(
+        title: const Text('Form Izin Sakit'),
+      ),
+      body: NikitaFace(),
+    ); */
   }
-  Widget builda(BuildContext context) {
+
+  Widget _build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Form Izin Sakit'),
@@ -47,51 +51,52 @@ class _SickScreenState extends State<SickScreen>
             horizontal: 10,
             vertical: 10,
           ),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height,
-            child: Column(
-              children: [
-                Container(
-                  width: MediaQuery.of(context).size.height,
-                  decoration: BoxDecoration(
-                    color: Colors.blueAccent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(1),
-                        child: TabBar(
-                          unselectedLabelColor: Colors.white,
-                          labelColor: Colors.black,
-                          indicatorColor: Colors.white,
-                          indicatorWeight: 2,
-                          indicator: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          controller: tabController,
-                          tabs: const [
-                            Tab(
-                              text: '1 Hari',
-                            ),
-                            Tab(
-                              text: '>1 hari',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+          child: Column(
+            children: const [
+              OneDay(),
+              /* Container(
+                width: MediaQuery.of(context).size.height,
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                Expanded(
-                  child: TabBarView(
-                    controller: tabController,
-                    children: const [OneDay(), OverOneDay()],
-                  ),
-                )
-              ],
-            ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.all(1),
+                      child: TabBar(
+                        unselectedLabelColor: Colors.white,
+                        labelColor: Colors.black,
+                        indicatorColor: Colors.white,
+                        indicatorWeight: 2,
+                        indicator: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        controller: tabController,
+                        tabs: const [
+                          Tab(
+                            text: '1 Hari',
+                          ),
+                          Tab(
+                            text: '>1 hari',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ), */
+              /* Expanded(
+                child: TabBarView(
+                  controller: tabController,
+                  children: const [
+                    OneDay(),
+                    OverOneDay(),
+                  ],
+                ),
+              ) */
+            ],
           ),
         ),
       ),

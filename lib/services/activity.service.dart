@@ -1,14 +1,26 @@
+import 'dart:convert';
+
 import '../api/main.dart';
 import '../models/response/activity_response.dart';
+import '../utils/status_activity.dart';
 
 class ActivityService {
   static ActivityService? _instance;
   factory ActivityService() => _instance ??= ActivityService._();
   ActivityService._();
 
-  Future<ActivityResponse> find({Map<String, dynamic>? params}) async {
-    final res = await Api().dio.get("/api.getdata", queryParameters: params);
-    var loginResponse = ActivityResponse.fromJson(res.data);
-    return loginResponse;
+  Future<List<Map<String, dynamic>>> find(
+    StatusActivity activity, {
+    Map<String, dynamic>? params,
+  }) async {
+    final copy = params ?? {};
+    copy['status'] = activity.name.toString();
+
+    final res = await Api().dio.get("/api.getdata", queryParameters: copy);
+    final data = jsonDecode(res.data);
+
+    final list =
+        List<Map<String, dynamic>>.from(data['data']).map((e) => e).toList();
+    return list;
   }
 }

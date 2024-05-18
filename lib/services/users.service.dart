@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:nikitaabsen/models/response/user_response.dart';
 
 import '../api/main.dart';
@@ -20,5 +22,15 @@ class UsersService {
     final res = await Api().dio.get("/users", queryParameters: params);
     var userResponse = UserResponse.fromJson(res.data);
     return userResponse;
+  }
+
+  Future<Map<String, dynamic>?> getProfile() async {
+    final res = await Api().dio.get('/api.getprofile');
+    final data = jsonDecode(res.data) as Map<String, dynamic>;
+    if (data['status'] == 'OK') {
+      return data;
+    }
+
+    throw Exception(data["message"].toString());
   }
 }

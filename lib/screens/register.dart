@@ -84,13 +84,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       maxLength: 70,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       validator: (value) {
-                        if (value == null  ) {
+                        if (value == null) {
                           return 'Nama tidak boleh kosong ';
                         }
                         return null;
-                      } ,
+                      },
 
-                     /* FormBuilderValidators.compose([
+                      /* FormBuilderValidators.compose([
                         FormBuilderValidators.required(
                             errorText: 'Nama tidak boleh kosong'),
                         FormBuilderValidators.match(r'^[a-z A-Z]+$',
@@ -122,11 +122,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       maxLength: 70,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       validator: (value) {
-                        if (value == null  ) {
+                        if (value == null) {
                           return 'Phone tidak boleh kosong';
                         }
                         return null;
-                      } ,
+                      },
                       decoration: InputDecoration(
                         counterText: '',
                         enabledBorder: OutlineInputBorder(
@@ -155,11 +155,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       maxLength: 50,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       validator: (value) {
-                        if (value == null  ) {
+                        if (value == null) {
                           return 'Password tidak boleh kosong';
                         }
                         return null;
-                      } ,
+                      },
 
                       /*FormBuilderValidators.compose([
                         FormBuilderValidators.required(
@@ -201,31 +201,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(
                       height: 20,
                     ),
-                    FormBuilderTextField(
-                      name: 'company_code',
-                      maxLength: 8,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (value) {
-                        if (value == null  ) {
-                          return 'Kode perusahaan tidak boleh kosong';
-                        }
-                        return null;
-                      } ,
-                      decoration: InputDecoration(
-                        counterText: '',
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
+                    Visibility(
+                      visible: false,
+                      child: FormBuilderTextField(
+                        name: 'company_code',
+                        maxLength: 8,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Kode perusahaan tidak boleh kosong';
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          counterText: '',
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: mainColor,
+                            ),
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          border: const OutlineInputBorder(),
+                          labelText: 'Kode Perusahaan',
+                          prefixIcon: Icon(
+                            Icons.work,
                             color: mainColor,
                           ),
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(10),
-                          ),
-                        ),
-                        border: const OutlineInputBorder(),
-                        labelText: 'Kode Perusahaan',
-                        prefixIcon: Icon(
-                          Icons.work,
-                          color: mainColor,
                         ),
                       ),
                     ),
@@ -244,7 +247,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         var response = await _authController.register(
                             _formKey.currentState!.value['fullname'].toString(),
-                            _formKey.currentState!.value['email'].toString(),
+                            _formKey.currentState!.value['phone'].toString(),
                             _formKey.currentState!.value['password'].toString(),
                             _formKey.currentState!.value['company_code']
                                 .toString(),

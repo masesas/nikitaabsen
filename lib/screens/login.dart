@@ -21,6 +21,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isPasswordVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final _authController = Get.put(AuthController());
 

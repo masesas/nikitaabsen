@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_declarations, unused_local_variable
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -9,21 +11,19 @@ class BasicListTile extends StatelessWidget {
   const BasicListTile({Key? key, required this.activity, this.onTap})
       : super(key: key);
 
-  final Activity activity;
+  final Map<String, dynamic> activity;
   final Function()? onTap;
 
   @override
   Widget build(BuildContext context) {
     final String activityDate =
-        AppUtils.basicDateFormatter(activity.createdAt!);
-    final String timeIn = AppUtils.getTimeFromDate(activity.timeIn);
-    final String timeOut = AppUtils.getTimeFromDate(activity.timeOut);
-    final String appStatus =
-        AppUtils.mapActivityStatusAll(activity.status!, activity);
-    final String status = AppUtils.mapActivityStatus(activity.status!);
-    final String isApprovedApproval =
-        AppUtils.getIsApprovedAbsen(activity.isApprovedIn);
-    final String notes = AppUtils.mapActivityNotes(activity.status!, activity);
+        AppUtils.basicDateFormatter(activity['att_datetime']);
+    final String timeIn = AppUtils.getTimeFromDate(activity['att_datetime']);
+    final String timeOut = '';
+    final String appStatus = '';
+    final String status = activity['status'];
+    final String isApprovedApproval = '';
+    final String notes = '';
 
     return ListTile(
       onTap: onTap,
@@ -31,22 +31,23 @@ class BasicListTile extends StatelessWidget {
         vertical: 5,
         horizontal: 5,
       ),
-      leading: (activity.checkInPhoto?.isNotEmpty ?? false)
+      leading: (activity['att_selfie']?.isNotEmpty ?? false)
           ? CircleAvatar(
               radius: 30,
               backgroundImage: CachedNetworkImageProvider(
-                AppUtils.getUrl(activity.checkInPhoto!),
+                AppUtils.getUrl(
+                    "/res/file?inline=true&file=${activity['att_selfie']}"),
               ),
             )
           : CircleAvatar(
               radius: 30,
               backgroundColor: mainColor,
               child: Text(
-                AppUtils.getInitials(activity.user?.fullname ?? 'No Name'),
+                AppUtils.getInitials(AppUtils.getUser().fullname ?? 'No Name'),
                 style: TextStyle(fontSize: 20),
               ),
             ),
-      title: Text(activity.user?.fullname ?? 'User'),
+      title: Text(AppUtils.getUser().fullname ?? 'User'),
       isThreeLine: true,
       trailing: Text(
         activityDate,
@@ -59,14 +60,10 @@ class BasicListTile extends StatelessWidget {
           const SizedBox(
             height: 5,
           ),
-          Text("Masuk: $timeIn"),
-          Text("Keluar: $timeOut"),
+          if (activity['status'] != 'IZIN' && activity['status'] != 'CUTI')
+            Text("Jam: $timeIn"),
           Text(
             "Status: $status",
-            // textAlign: TextAlign.end,
-          ),
-          Text(
-            "Notes: $notes",
             // textAlign: TextAlign.end,
           ),
           const SizedBox(

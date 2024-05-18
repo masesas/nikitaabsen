@@ -253,7 +253,7 @@ class AppUtils {
       Version latestVersion = Version.parse(response.version!);
 
       if (latestVersion > currentVersion) {
-        return null;//response.url;
+        return null; //response.url;
       }
 
       return null;
@@ -321,17 +321,28 @@ class AppUtils {
   }
 
   static String generateRandomString([int length = 20]) {
-  const String charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';/**!@#\$%^&*()_+ */
+    const String charset =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    /**!@#\$%^&*()_+ */
 
-  Random random = Random();
-  String result = '';
+    Random random = Random();
+    String result = '';
 
-  for (int i = 0; i < length; i++) {
-    int randomIndex = random.nextInt(charset.length);
-    result += charset[randomIndex];
+    for (int i = 0; i < length; i++) {
+      int randomIndex = random.nextInt(charset.length);
+      result += charset[randomIndex];
+    }
+
+    return result;
   }
-
-  return result;
 }
 
+extension DtExt on DateTime {
+  bool isDateEqual(DateTime b) {
+    final a =
+        DateFormat('yyyy-MM-dd').parse(DateFormat('yyyy-MM-dd').format(this));
+    b = DateFormat('yyyy-MM-dd').parse(DateFormat('yyyy-MM-dd').format(b));
+
+    return a.isAtSameMomentAs(b);
+  }
 }

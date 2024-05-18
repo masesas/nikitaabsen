@@ -7,8 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart';
+import 'package:nikitaabsen/controllers/home.controller.dart';
 import 'package:nikitaabsen/models/shifting.model.dart';
 import 'package:nikitaabsen/screens/shifting/shifting_list_page.dart';
+import 'package:nikitaabsen/utils/status_activity.dart';
 import '../components/form/locpoint_form.dart';
 import '../models/request/document_sakit.dart';
 import '../models/request/izin_sakit.dart';
@@ -35,12 +39,14 @@ class RequestActivityController extends GetxController {
   var message = ''.obs;
   var user = AppUtils.getUser();
 
+  var homeController = Get.find<HomeController>();
+
   // var locpointss = AppUtils.getLocPoint();
 
   @override
   void onInit() {
     super.onInit();
-    setShifting();
+    //setShifting();
   }
 
   setLoading(value) {
@@ -96,9 +102,9 @@ class RequestActivityController extends GetxController {
       final uploadFormData = dio.FormData.fromMap({
         'uri': await AppUtils.createMultipart(filepath),
       });
-      final upload = await UploadService().create(uploadFormData);
+      final uploadId = await UploadService().create(uploadFormData);
       final clockInData = ClockIn(
-          checkInPhoto: upload.id,
+          checkInPhoto: uploadId,
           userId: userId,
           latitude: currentPosition.latitude.toString(),
           longitude: currentPosition.longitude.toString(),
@@ -139,10 +145,10 @@ class RequestActivityController extends GetxController {
     final uploadFormData = dio.FormData.fromMap({
       'uri': await AppUtils.createMultipart(file.path),
     });
-    final upload = await UploadService().create(uploadFormData);
+    final uploadId = await UploadService().create(uploadFormData);
     //  print(upload);
 
-    var uploadDocument = [UserSickDocument(document: upload.id)];
+    var uploadDocument = [UserSickDocument(document: uploadId)];
     //   print(json.encode(uploadDocument));
 
     final izinSakit = DocumentSick(
@@ -368,5 +374,59 @@ class RequestActivityController extends GetxController {
       EasyLoading.showError('Terjadi kesalahan pada server');
       return;
     }
+  }
+
+  Future<void> saveActivity(
+      StatusActivity activity, Map<String, dynamic> data) async {
+    EasyLoading.show();
+    setLoading(true);
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      
+      data['location'] = await Geolocator.getCurrentPosition();
+      data['mocked'] = position.isMocked;
+      data['acuration'] = position.accuracy;
+
+      if ((data['selfie'] as String?) != null &&
+          (data['selfie'] as String?)!.isNotEmpty) {
+        final uploadFormData = dio.FormData.fromMap({
+          'image': await AppUtils.createMultipart(data['selfie']),
+        });
+
+        final uploadId = await UploadService().create(uploadFormData);
+        data['selfie'] = uploadId;
+      }
+
+      await RequestActivityService().saveAktivity(activity, data);
+      EasyLoading.showSuccess("Berhasil menyimpan aktivitas")
+          .then((value) => Get.back());
+
+      final box = GetStorage();
+      await box.write(
+          'nextStatusAttendance',
+          activity == StatusActivity.checkin
+              ? 'CHECKOUT'
+              : activity == StatusActivity.checkout
+                  ? 'CHECKIN'
+                  : activity.name.toUpperCase());
+
+      if (activity == StatusActivity.checkin) {
+        await box.write('lastWaktuCheckin',
+            DateFormat('yyyy-MM-dd hh:mm').format(DateTime.now()));
+      } else if (activity == StatusActivity.checkout) {
+        await box.write('lastWaktuCheckout',
+            DateFormat('yyyy-MM-dd hh:mm').format(DateTime.now()));
+      }
+
+      homeController.getCurrentUser();
+      homeController.getSessionAttendace();
+    } catch (e) {
+      EasyLoading.showError('Terjadi kesalahan pada server');
+    }
+
+    EasyLoading.dismiss();
+    setLoading(false);
   }
 }

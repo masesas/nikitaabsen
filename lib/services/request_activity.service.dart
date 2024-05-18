@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:nikitaabsen/models/request/izin_sakit.dart';
 import 'package:nikitaabsen/models/request/overtime_request.dart';
 import 'package:nikitaabsen/models/request/register_mobile.dart';
@@ -7,6 +9,7 @@ import '../models/clock_in.model.dart';
 import '../models/clock_out.dart';
 import '../models/request/izin_request.model.dart';
 import '../models/response/request_activity_response.model.dart';
+import '../utils/status_activity.dart';
 
 class RequestActivityService {
   static RequestActivityService? _instance;
@@ -42,5 +45,16 @@ class RequestActivityService {
     final izinSakitResponse = RequestActivityResponse.fromJson(response.data);
     print(izinSakitResponse);
     return izinSakitResponse;
+  }
+
+  ///
+  Future<void> saveAktivity(
+      StatusActivity activity, Map<String, dynamic> json) async {
+    final request =
+        await Api().dio.post(activity.endpoint, queryParameters: json);
+    final response = jsonDecode(request.data) as Map<String, dynamic>;
+    if (response['status'] != 'OK') {
+      throw Exception(response['message']);
+    }
   }
 }

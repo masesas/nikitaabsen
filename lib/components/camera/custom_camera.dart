@@ -11,7 +11,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 class CustomCamera extends StatefulWidget {
   WebViewController? controller;
-    CustomCamera({Key? key, this.file}) : super(key: key);
+  CustomCamera({Key? key, this.file}) : super(key: key);
 
   final Future Function(XFile)? file;
 
@@ -50,14 +50,13 @@ class CustomCameraState extends State<CustomCamera> {
   void dispose() {
     super.dispose();
     cameraController?.dispose();
-
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: <Widget>[
-        NikitaFace( controller : widget.controller  ),
+        //NikitaFace(controller: widget.controller),
         SizedBox(
           height: MediaQuery.of(context).size.height,
           width: MediaQuery.of(context).size.width,
@@ -80,32 +79,34 @@ class CustomCameraState extends State<CustomCamera> {
                     borderRadius: BorderRadius.circular(50.0),
                     // side: BorderSide(color: Colors.blueAccent, width: 1.5),
                   ),
-                  child: InkWell(
-                    child: Image.asset('assets/images/aperture.png'),
-                    customBorder: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                      side: const BorderSide(
-                          color: Colors.blueAccent, width: 2.5),
-                    ),
-                    onTap: () async {
-                      //EasyLoading.show(status: 'Memproses...');
-                      final file = await cameraController!.takePicture();
-                      debugPrint(file.path);
-                      await cameraController!.pausePreview();
-                      //await widget.file!(file);
+                  child: Builder(builder: (context) {
+                    return InkWell(
+                      customBorder: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        side: const BorderSide(
+                            color: Colors.blueAccent, width: 2.5),
+                      ),
+                      onTap: () async {
+                        //EasyLoading.show(status: 'Memproses...');
+                        final file = await cameraController!.takePicture();
+                        /* debugPrint(file.path);
+                          await cameraController!.pausePreview(); */
+                        //await widget.file!(file);
+                        if (mounted) {
+                          Navigator.pop(context, file);
+                        }
 
-
-                      final String contentBase64 = base64Encode(await file.readAsBytes() );
-                      widget.controller!.runJavaScriptReturningResult("  loadRef64('data:image/png;base64,$contentBase64' );");
-                    },
-                  ),
+                        /*  final String contentBase64 = base64Encode(await file.readAsBytes() );
+                          widget.controller!.runJavaScriptReturningResult("  loadRef64('data:image/png;base64,$contentBase64' );"); */
+                      },
+                      child: Image.asset('assets/images/aperture.png'),
+                    );
+                  }),
                 ),
               ),
             ),
-
           ],
         ),
-
       ],
     );
   }
