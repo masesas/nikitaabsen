@@ -1,9 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
+import 'package:facesdk_plugin/facesdk_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_exif_rotation/flutter_exif_rotation.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio;
@@ -11,10 +15,12 @@ import 'package:nikitaabsen/components/button/basic_button.dart';
 import 'package:nikitaabsen/components/camera/cameras.dart';
 import 'package:nikitaabsen/controllers/auth.controller.dart';
 import 'package:nikitaabsen/models/response/upload_response.model.dart';
+import 'package:nikitaabsen/person.dart';
 import 'package:nikitaabsen/services/upload.service.dart';
 import 'package:nikitaabsen/utils/app_utils.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 import '../utils/constants.dart';
 import 'login.dart';
 
@@ -288,13 +294,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: InkWell(
             //takePhoto(ImageSource.camera)
             onTap: () async {
-              XFile? imageFromCamera = await Navigator.push(context,
+              enrollPerson();
+
+            /*  XFile? imageFromCamera = await Navigator.push(context,
                   MaterialPageRoute(builder: (context) => const Cameras()));
+
               if (imageFromCamera != null) {
                 setState(() {
                   imagePath = imageFromCamera;
                 });
-              }
+              }*/
             },
             child: const Icon(
               Icons.camera_alt,
@@ -305,5 +314,122 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ]),
     );
+  }
+
+
+  Future<Database> createDB() async {
+    final database = openDatabase(
+      // Set the path to the database. Note: Using the `join` function from the
+      // `path` package is best practice to ensure the path is correctly
+      // constructed for each platform.
+      join(await getDatabasesPath(), 'person.db'),
+      // When the database is first created, create a table to store dogs.
+      onCreate: (db, version) {
+        // Run the CREATE TABLE statement on the database.
+        return db.execute(
+          'CREATE TABLE person(name text, faceJpg blob, templates blob)',
+        );
+      },
+      // Set the version. This executes the onCreate function and provides a
+      // path to perform database upgrades and downgrades.
+      version: 1,
+    );
+
+    return database;
+  }
+
+  // A method that retrieves all the dogs from the dogs table.
+  Future<List<Person>> loadAllPersons() async {
+    // Get a reference to the database.
+    final db = await createDB();
+
+    // Query the table for all The Dogs.
+    final List<Map<String, dynamic>> maps = await db.query('person');
+
+    // Convert the List<Map<String, dynamic> into a List<Dog>.
+    return List.generate(maps.length, (i) {
+      return Person.fromMap(maps[i]);
+    });
+  }
+
+  Future<void> insertPerson(Person person) async {
+    // Get a reference to the database.
+    final db = await createDB();
+
+    // Insert the Dog into the correct table. You might also specify the
+    // `conflictAlgorithm` to use in case the same dog is inserted twice.
+    //
+    // In this case, replace any previous data.
+    await db.insert(
+      'person',
+      person.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    setState(() {
+      //widget.personList.add(person);
+    });
+  }
+
+  Future<void> deleteAllPerson() async {
+    final db = await createDB();
+    await db.delete('person');
+
+    setState(() {
+      //widget.personList.clear();
+    });
+
+    Fluttertoast.showToast(
+        msg: "All person deleted!",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0);
+  }
+  Future enrollPerson() async {
+    final _facesdkPlugin = FacesdkPlugin();
+    try {
+
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      var rotatedImage =
+      await FlutterExifRotation.rotateImage(path: image.path);
+
+       await deleteAllPerson();
+
+      final faces = await _facesdkPlugin.extractFaces(rotatedImage.path);
+      for (var face in faces) {
+        num randomNumber =
+            10000 + Random().nextInt(10000); // from 0 upto 99 included
+        Person person = Person(
+            name: 'Person' + randomNumber.toString(),
+            faceJpg: face['faceJpg'],
+            templates: face['templates']);
+        insertPerson(person);
+      }
+
+      if (faces.length == 0) {
+        Fluttertoast.showToast(
+            msg: "No face detected!",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
+      } else {
+        Fluttertoast.showToast(
+            msg: "Person enrolled!",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
+      }
+    } catch (e) {}
   }
 }

@@ -37,6 +37,7 @@ class CamerasState extends State<Cameras> {
 
   @override
   void dispose() {
+
     super.dispose();
   }
 
@@ -76,6 +77,8 @@ class CamerasState extends State<Cameras> {
                         onTap: () async {
                           final XFile file =
                               await cameraController!.takePicture();
+
+                           
                           if (!mounted) {
                             return;
                           }

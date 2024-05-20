@@ -6,8 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:nikitaabsen/controllers/request_activity.controller.dart';
+import 'package:nikitaabsen/facedetectionview.dart';
+import 'package:nikitaabsen/person.dart';
 import 'package:nikitaabsen/utils/status_activity.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../components/button/basic_button.dart';
 import '../components/camera/custom_camera.dart';
@@ -232,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ClockCard(
                           user: controller.user.value,
                           profile: controller.profile,
-                          onPressedClockIn: () async => await _absen(),
+                          onPressedClockIn: () async => await _absen( ),
                           onPressedClockOut: () {
                             showModalBottomSheet(
                               context: context,
@@ -491,22 +494,29 @@ class _HomeScreenState extends State<HomeScreen> {
     return;
   }
 
-  Future<void> _absen({
-    StatusActivity? activity,
-  }) async {
+  Future<void> _absen({  StatusActivity? activity   }) async {
+    List<Person> personList = await loadAllPersons();
     await controller.determinePosition();
     if (mounted) {
+
       XFile? file = await Navigator.push(
         context,
-        MaterialPageRoute(
+          /*MaterialPageRoute(
           builder: (context) => CustomCamera(
             file: (file) async =>
                 await handleClockInCallback(file, controller.user.value),
           ),
-        ),
+        ),*/
+
+          MaterialPageRoute(
+            builder: (context) => FaceRecognitionView(      )
+          ),
+
       );
 
-      if (file != null) {
+
+
+      if (file != null || file==null) {
         requestActivityController.saveActivity(
           activity ??
               (controller.nextStatusAttendace.value == 'CHECKOUT'
@@ -573,4 +583,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //   return true;
   // }
+
 }
+
+

@@ -36,6 +36,10 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  facesdk_plugin:
+    path: ./facesdk_plugin
+  flutter_exif_rotation: ^0.5.1
+
   camera: ^0.10.0+1
   persistent_bottom_nav_bar: ^4.0.2
   flutter_easyloading: ^3.0.5
@@ -57,7 +61,10 @@ dependencies:
   onesignal_flutter: ^3.4.0
   google_maps_flutter: ^2.2.1
   webview_flutter: ^4.0.2
-
+  shared_preferences:
+  fluttertoast:
+  settings_ui:
+  sqflite:
 dependency_overrides:
   package_info_plus: any
 
@@ -89,8 +96,8 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/images/
-    - assets/www/
-    - assets/www/js/
+    #- assets/www/
+    #- assets/www/js/
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 
