@@ -7,6 +7,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:nikitaabsen/controllers/activity.controller.dart';
 
 import '../models/user.model.dart';
 import '../screens/login.dart';
@@ -24,6 +25,8 @@ class HomeController extends GetxController {
   final lastWaktuCheckin = ''.obs;
   final lastWaktuCheckout = ''.obs;
 
+  final activityController = Get.find<ActivityController>();
+
   @override
   void onInit() {
     super.onInit();
@@ -35,9 +38,12 @@ class HomeController extends GetxController {
   }
 
   Future<void> init() async {
+    EasyLoading.show();
     await getCurrentUser();
     await checkNewVersion();
-    getSessionAttendace();
+    await activityController.getAbsen();
+    await getSessionAttendace();
+    EasyLoading.dismiss();
   }
 
   Future<void> handleLogout() async {

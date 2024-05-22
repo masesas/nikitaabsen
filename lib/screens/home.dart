@@ -1,16 +1,19 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:nikitaabsen/controllers/activity.controller.dart';
 import 'package:nikitaabsen/controllers/request_activity.controller.dart';
 import 'package:nikitaabsen/facedetectionview.dart';
 import 'package:nikitaabsen/person.dart';
 import 'package:nikitaabsen/utils/status_activity.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 import '../components/button/basic_button.dart';
 import '../components/camera/custom_camera.dart';
@@ -42,15 +45,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final activityController = Get.put(ActivityController({}));
   final controller = Get.put(HomeController());
   final requestActivityController = Get.put(RequestActivityController());
-
+  
   var locpointss = AppUtils.getLocPoint();
   var radius = AppUtils.getRadius();
 
   @override
   void initState() {
     super.initState();
+
     versionCheck();
     determinePosition();
     _initOneSignal();
@@ -235,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ClockCard(
                           user: controller.user.value,
                           profile: controller.profile,
-                          onPressedClockIn: () async => await _absen( ),
+                          onPressedClockIn: () async => await _absen(),
                           onPressedClockOut: () {
                             showModalBottomSheet(
                               context: context,
@@ -269,11 +274,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.all(10),
                       shrinkWrap: true,
                       primary: true,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
+                        childAspectRatio:
+                            MediaQuery.of(context).devicePixelRatio * 0.35,
                       ),
                       children: menus
                       // [
@@ -494,35 +500,36 @@ class _HomeScreenState extends State<HomeScreen> {
     return;
   }
 
-  Future<void> _absen({  StatusActivity? activity   }) async {
-    List<Person> personList = await loadAllPersons();
+  Future<void> _absen({StatusActivity? activity}) async {
     await controller.determinePosition();
     if (mounted) {
-
-      XFile? file = await Navigator.push(
+      final bytes = await Navigator.push(
         context,
-          /*MaterialPageRoute(
+        /*MaterialPageRoute(
           builder: (context) => CustomCamera(
             file: (file) async =>
                 await handleClockInCallback(file, controller.user.value),
           ),
         ),*/
 
-          MaterialPageRoute(
-            builder: (context) => FaceRecognitionView(      )
-          ),
-
+        MaterialPageRoute(builder: (context) => FaceRecognitionView()),
       );
 
-
-
-      if (file != null || file==null) {
+      if (bytes != null) {
+        final absenType = controller.nextStatusAttendace.value;
+        final tempDir = await path_provider.getTemporaryDirectory();
+        File file =
+            await File('${tempDir.path}/absen-$absenType-${DateTime.now()}.png')
+                .create();
+        file.writeAsBytesSync(bytes);
         requestActivityController.saveActivity(
           activity ??
               (controller.nextStatusAttendace.value == 'CHECKOUT'
                   ? StatusActivity.checkout
                   : StatusActivity.checkin),
-          {},
+          {
+            "selfie": file.path,
+          },
         );
         /* showModalBottomSheet(
                                 isScrollControlled: true,
@@ -545,6 +552,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ); */
+      } else {
+        EasyLoading.showError('Wajah tidak dikenali');
       }
     }
   }
@@ -583,7 +592,4 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //   return true;
   // }
-
 }
-
-

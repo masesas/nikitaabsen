@@ -34,7 +34,6 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _authController = Get.put(AuthController());
-
   final _formKey = GlobalKey<FormBuilderState>();
   bool isPasswordVisible = false;
   final nameRegExp =
@@ -50,6 +49,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     error.value = value;
     message.value = errorMsg;
   }
+
+  bool _loadingPickImage = false;
 
   @override
   void initState() {
@@ -294,9 +295,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: InkWell(
             //takePhoto(ImageSource.camera)
             onTap: () async {
+              if (_formKey.currentState!.value['fullname'].toString().isEmpty) {
+                EasyLoading.showError('Nama harus di isi terlebih dahulu');
+                return;
+              }
+
               enrollPerson();
 
-            /*  XFile? imageFromCamera = await Navigator.push(context,
+              /*  XFile? imageFromCamera = await Navigator.push(context,
                   MaterialPageRoute(builder: (context) => const Cameras()));
 
               if (imageFromCamera != null) {
@@ -315,7 +321,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ]),
     );
   }
-
 
   Future<Database> createDB() async {
     final database = openDatabase(
@@ -379,39 +384,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
       //widget.personList.clear();
     });
 
-    Fluttertoast.showToast(
+    /* Fluttertoast.showToast(
         msg: "All person deleted!",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         timeInSecForIosWeb: 1,
         backgroundColor: Colors.red,
         textColor: Colors.white,
-        fontSize: 16.0);
+        fontSize: 16.0); */
   }
+
   Future enrollPerson() async {
+    EasyLoading.show(status: 'loading...');
     final _facesdkPlugin = FacesdkPlugin();
     try {
-
       final image = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (image == null) return;
 
       var rotatedImage =
-      await FlutterExifRotation.rotateImage(path: image.path);
+          await FlutterExifRotation.rotateImage(path: image.path);
 
-       await deleteAllPerson();
+      await deleteAllPerson();
 
       final faces = await _facesdkPlugin.extractFaces(rotatedImage.path);
-      for (var face in faces) {
-        num randomNumber =
-            10000 + Random().nextInt(10000); // from 0 upto 99 included
-        Person person = Person(
-            name: 'Person' + randomNumber.toString(),
-            faceJpg: face['faceJpg'],
-            templates: face['templates']);
-        insertPerson(person);
+      if ((faces as List).isNotEmpty) {
+        for (var face in faces) {
+          num randomNumber =
+              10000 + Random().nextInt(10000); // from 0 upto 99 included
+          Person person = Person(
+              name: '${_formKey.currentState!.value['fullname']}-1',
+              faceJpg: face['faceJpg'],
+              templates: face['templates']);
+          await insertPerson(person);
+        }
+      } else {
+        EasyLoading.showError(
+            'Wajah tidak terdeteksi, Masukkan Foto Wajah yg valid');
       }
 
-      if (faces.length == 0) {
+      /* if (faces.length == 0) {
         Fluttertoast.showToast(
             msg: "No face detected!",
             toastLength: Toast.LENGTH_SHORT,
@@ -429,7 +440,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             backgroundColor: Colors.red,
             textColor: Colors.white,
             fontSize: 16.0);
-      }
+      } */
+
+      setState(() {
+        imagePath = XFile(image.path);
+      });
     } catch (e) {}
+
+    EasyLoading.dismiss();
   }
 }

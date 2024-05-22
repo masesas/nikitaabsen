@@ -13,14 +13,18 @@ class ActivityService {
     StatusActivity activity, {
     Map<String, dynamic>? params,
   }) async {
-    final copy = params ?? {};
-    copy['status'] = activity.name.toString();
+    try {
+       final copy = params ?? {};
+      copy['status'] = activity.name.toString();
 
-    final res = await Api().dio.get("/api.getdata", queryParameters: copy);
-    final data = jsonDecode(res.data);
+      final res = await Api().dio.get("/api.getdata", queryParameters: copy);
+      final data = jsonDecode(res.data);
 
-    final list =
-        List<Map<String, dynamic>>.from(data['data']).map((e) => e).toList();
-    return list;
+      final list =
+          List<Map<String, dynamic>>.from(data['data']).map((e) => e).toList();
+      return list;
+    } catch (e) {
+      rethrow;
+    }
   }
 }

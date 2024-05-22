@@ -20,6 +20,26 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
-        }
+        },
+        /* {
+            "name": "facesdk_plugin",
+            "cwd": "facesdk_plugin",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "facesdk_plugin (profile mode)",
+            "cwd": "facesdk_plugin",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "facesdk_plugin (release mode)",
+            "cwd": "facesdk_plugin",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        } */
     ]
 }

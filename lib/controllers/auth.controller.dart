@@ -7,6 +7,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:dio/dio.dart' as dio;
+import 'package:nikitaabsen/facedetectionview.dart';
 import 'package:nikitaabsen/models/location_point_model.dart';
 import 'package:nikitaabsen/models/request/register_mobile.dart';
 import 'package:nikitaabsen/models/response/company_response.dart';
@@ -18,12 +19,15 @@ import 'package:nikitaabsen/models/user_schedule.dart';
 import 'package:nikitaabsen/models/workday.dart';
 import 'package:nikitaabsen/services/upload.service.dart';
 import 'package:nikitaabsen/utils/app_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/request/login_request.dart';
 import '../models/response/login_response.dart';
 import '../models/user.model.dart';
 import '../screens/home.dart';
 import '../screens/login.dart';
 import '../services/auth.service.dart';
+
+const String FIRST_LOGIN = 'first_login';
 
 class AuthController extends GetxController {
   var error = false.obs;
@@ -66,6 +70,9 @@ class AuthController extends GetxController {
   }
 
   Future<void> handleLogout() async {
+    final db = await createDB();
+    await db.delete('person');
+
     final box = GetStorage();
     await box.erase();
     Get.deleteAll();
@@ -83,6 +90,9 @@ class AuthController extends GetxController {
         final box = GetStorage();
         await box.write('user', user);
         await box.write('token', accessToken);
+
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setBool(FIRST_LOGIN, true);
 
         Get.off(const HomeScreen());
 

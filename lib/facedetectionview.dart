@@ -1,25 +1,29 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:facesdk_plugin/facedetection_interface.dart';
+import 'package:nikitaabsen/controllers/auth.controller.dart';
+import 'package:nikitaabsen/utils/logger_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:facesdk_plugin/facesdk_plugin.dart';
 import 'package:sqflite/sqflite.dart';
+import 'models/user.model.dart';
 import 'person.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as path;
 
-
+import 'utils/app_utils.dart';
 
 Future<Database> createDB() async {
   final database = openDatabase(
     // Set the path to the database. Note: Using the `join` function from the
     // `path` package is best practice to ensure the path is correctly
     // constructed for each platform.
-    join(await getDatabasesPath(), 'person.db'),
+    path.join(await getDatabasesPath(), 'person.db'),
     // When the database is first created, create a table to store dogs.
     onCreate: (db, version) {
       // Run the CREATE TABLE statement on the database.
@@ -51,11 +55,10 @@ Future<List<Person>> loadAllPersons() async {
 
 // ignore: must_be_immutable
 class FaceRecognitionView extends StatefulWidget {
-  List<Person> personList = <Person> [];
+  List<Person> personList = <Person>[];
   FaceDetectionViewController? faceDetectionViewController;
 
-
-  FaceRecognitionView({super.key });
+  FaceRecognitionView({super.key});
 
   @override
   State<StatefulWidget> createState() => FaceRecognitionViewState();
@@ -79,25 +82,37 @@ class FaceRecognitionViewState extends State<FaceRecognitionView> {
   final _facesdkPlugin = FacesdkPlugin();
   FaceDetectionViewController? faceDetectionViewController;
 
+  late SharedPreferences prefs;
+  bool _isFirstLogin = false;
+  User? _user;
+  StreamController<(bool, Uint8List?)> detectedStream =
+      StreamController<(bool, Uint8List?)>.broadcast();
+
   @override
   void initState() {
     super.initState();
-
     loadSettings();
+    detectedStream.stream.listen((event) {
+      if (event.$1 && event.$2 != null) {
+        Navigator.pop(context, event.$2);
+      } else {
+        //Navigator.pop(context, null);
+      }
+    });
   }
 
   Future<void> loadSettings() async {
-
     widget.personList = await loadAllPersons();
-    final prefs = await SharedPreferences.getInstance();
+    prefs = await SharedPreferences.getInstance();
     String? livenessThreshold = prefs.getString("liveness_threshold");
     String? identifyThreshold = prefs.getString("identify_threshold");
     setState(() {
       _livenessThreshold = double.parse(livenessThreshold ?? "0.7");
       _identifyThreshold = double.parse(identifyThreshold ?? "0.8");
+      _isFirstLogin = prefs.getBool(FIRST_LOGIN) ?? false;
+      _user = AppUtils.getUser();
     });
   }
-
 
   Future<void> faceRecognitionStart() async {
     final prefs = await SharedPreferences.getInstance();
@@ -113,8 +128,6 @@ class FaceRecognitionViewState extends State<FaceRecognitionView> {
 
   Future<bool> onFaceDetected(faces) async {
     if (_recognized == true) {
-
-
       return false;
     }
 
@@ -135,29 +148,49 @@ class FaceRecognitionViewState extends State<FaceRecognitionView> {
     var enrolledFace, identifedFace;
     if (faces.length > 0) {
       var face = faces[0];
-      for (var person in widget.personList) {
-        double similarity = await _facesdkPlugin.similarityCalculation(
-                face['templates'], person.templates) ??
-            -1;
-        if (maxSimilarity < similarity) {
-          maxSimilarity = similarity;
-          maxSimilarityName = person.name;
+      if (widget.personList.isEmpty) {
+        if (face['liveness'] > _livenessThreshold) {
+          maxSimilarity = _identifyThreshold + 10;
+          maxSimilarityName = _user!.fullname ?? "Tidak ada nama";
           maxLiveness = face['liveness'];
           maxYaw = face['yaw'];
           maxRoll = face['roll'];
           maxPitch = face['pitch'];
           identifedFace = face['faceJpg'];
-          enrolledFace = person.faceJpg;
+          enrolledFace = face['faceJpg'];
+          LoggerUtils.printFullLog(
+              message: "detected", tag: "no_enrolled_face");
+        } else {
+          LoggerUtils.printFullLog(
+              message: "not detected", tag: "no_enrolled_face");
+        }
+      } else {
+        for (var person in widget.personList) {
+          double similarity = await _facesdkPlugin.similarityCalculation(
+                  face['templates'], person.templates) ??
+              -1;
+          if (maxSimilarity < similarity) {
+            maxSimilarity = similarity;
+            maxSimilarityName = person.name;
+            maxLiveness = face['liveness'];
+            maxYaw = face['yaw'];
+            maxRoll = face['roll'];
+            maxPitch = face['pitch'];
+            identifedFace = face['faceJpg'];
+            enrolledFace = person.faceJpg;
+          }
         }
       }
 
       if (maxSimilarity > _identifyThreshold &&
           maxLiveness > _livenessThreshold) {
+        prefs.setBool(FIRST_LOGIN, false);
         recognized = true;
+        _isFirstLogin = false;
       }
     }
 
-    Future.delayed(const Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () async {
       if (!mounted) return false;
       setState(() {
         _recognized = recognized;
@@ -170,17 +203,46 @@ class FaceRecognitionViewState extends State<FaceRecognitionView> {
         _enrolledFace = enrolledFace;
         _identifiedFace = identifedFace;
       });
+
       if (recognized) {
         faceDetectionViewController?.stopCamera();
         setState(() {
           _faces = null;
-
         });
+        final person = Person(
+          name: _user!.fullname!,
+          faceJpg: identifedFace,
+          templates: enrolledFace,
+        );
 
+        await insertPerson(person);
+        detectedStream.add((true, identifedFace));
+      } else {
+        detectedStream.add((false, null));
       }
     });
 
     return recognized;
+  }
+
+  Future<void> insertPerson(Person person) async {
+    // Get a reference to the database.
+    final db = await createDB();
+
+    // Insert the Dog into the correct table. You might also specify the
+    // `conflictAlgorithm` to use in case the same dog is inserted twice.
+    //
+    // In this case, replace any previous data.
+    //await db.delete('person');
+    await db.insert(
+      'person',
+      person.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    setState(() {
+      widget.personList.add(person);
+    });
   }
 
   @override
@@ -207,7 +269,7 @@ class FaceRecognitionViewState extends State<FaceRecognitionView> {
                     faces: _faces, livenessThreshold: _livenessThreshold),
               ),
             ),
-            Visibility(
+            /* Visibility(
                 visible: _recognized,
                 child: Container(
                   width: double.infinity,
@@ -363,7 +425,7 @@ class FaceRecognitionViewState extends State<FaceRecognitionView> {
                           child: const Text('Close'),
                         ),
                       ]),
-                )),
+                )), */
           ],
         ),
       ),
@@ -424,7 +486,11 @@ class _FaceDetectionViewState extends State<FaceDetectionView> {
 class FacePainter extends CustomPainter {
   dynamic faces;
   double livenessThreshold;
-  FacePainter({required this.faces, required this.livenessThreshold});
+
+  FacePainter({
+    required this.faces,
+    required this.livenessThreshold,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -442,10 +508,11 @@ class FacePainter extends CustomPainter {
         Color color = const Color.fromARGB(0xff, 0xff, 0, 0);
         if (face['liveness'] < livenessThreshold) {
           color = const Color.fromARGB(0xff, 0xff, 0, 0);
-          title = "Spoof" + face['liveness'].toString();
+          title = "Tidak di Kenali";
         } else {
           color = const Color.fromARGB(0xff, 0, 0xff, 0);
-          title = "Real " + face['liveness'].toString();
+          //title = "Real ${face['liveness']}";
+          title = "";
         }
 
         TextSpan span =
